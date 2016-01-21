@@ -43,6 +43,9 @@ include_once('library/object-handlers.php');
 include_once('library/php-json-ld.php');
 include_once('library/relationships.php');
 
+/**
+* The plugin main class, generating and displaying the queried resource RDF Graph in requested format.
+**/
 class LH_rdf_plugin {
 
   /**
