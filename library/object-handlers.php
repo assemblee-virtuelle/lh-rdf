@@ -1,18 +1,33 @@
 <?php
 
+/**
+ * Class handling the RDF graph generation depending upon the requested object type
+ **/
 class LH_rdf_object_handlers {
+  /**
+   * The format to generate
+   **/
   var $format;
 
+  /**
+   * Get the URI associated with the user whose id is given as parameter
+   **/
   private function return_user_uri($id) {
     return get_author_posts_url($id)."#account";
   }
 
+  /**
+   * Return a resource associated with the current object requested
+   **/
   private function return_seeAlso_resource($resource) {
     $resource = add_query_arg('feed','lhrdf', $resource);
     $resource = add_query_arg('format',$this->format, $resource);
     return $resource;
   }
 
+  /**
+   * Compute the current page URL based on the $SERVER variables
+   **/
   private function curPageURL() {
     $pageURL = 'http';
     if ($_SERVER["HTTPS"] == "on") {$pageURL .= "s";}
@@ -25,6 +40,9 @@ class LH_rdf_object_handlers {
     return $pageURL;
   }
 
+  /**
+   * Gets the liks of the images associated with the current post in all sizes
+   **/
   private function get_image_size_links($post) {
   	/* Set up an empty array for the links. */
   	$links = array();
@@ -53,16 +71,22 @@ class LH_rdf_object_handlers {
   }
 
 
-  private function WP_Post_types($graph,$post) {
+  /**
+   * Returns the RDF graph associated with the Wordpress Post content type
+   **/
+  private function WP_Post_types($graph, $post) {
     if ($post->post_type == 'post') {
       $post_resource = $graph->resource($post->guid);
-      $post_resource->add('rdf:type', $graph->resource('sioct:BlogPost'));
+      $post_resource->add('rdf:type', $graph->resource('sioc:BlogPost'));
     }
 
     return $graph;
   }
 
-  private function WP_Post_attachments($graph,$post) {
+  /**
+   * Returns the RDF graph of the attachments associated with the current Post
+   **/
+  private function WP_Post_attachments($graph, $post) {
     $args = array( 'post_type' => 'attachment', 'numberposts' => null, 'post_status' => 'inherit', 'post_parent' => $post->ID );
     $attachments = get_posts($args);
 
@@ -78,7 +102,10 @@ class LH_rdf_object_handlers {
     return $graph;
   }
 
-  private function WP_Post_taxonomies($graph,$post) {
+  /**
+   * Returns the RDF graph of the taxonomies associated with the current Post
+   **/
+  private function WP_Post_taxonomies($graph, $post) {
     $taxonomy_names = get_object_taxonomies( $post->post_type );
     foreach ( $taxonomy_names as $taxonomy_name ) {
       $terms = wp_get_post_terms($post->ID, $taxonomy_name);
@@ -92,8 +119,10 @@ class LH_rdf_object_handlers {
     return $graph;
   }
 
-
-  private function stdClass_types($graph,$taxonomy) {
+  /**
+   * Returns the RDF graph of the taxonomies associated with the current class instance
+   **/
+  private function stdClass_types($graph, $taxonomy) {
     if ($taxonomy->taxonomy == 'category') {
       $taxonomy_resource = $graph->resource(get_term_link( $taxonomy));
       $taxonomy_resource->add('rdf:type', $graph->resource('skos:Concept'));
@@ -114,14 +143,16 @@ class LH_rdf_object_handlers {
       }
     } elseif ($taxonomy->taxonomy == 'post_tag') {
       $post_resource = $graph->resource(get_term_link( $taxonomy));
-      $post_resource->add('rdf:type', $graph->resource('sioct:Tag'));
+      $post_resource->add('rdf:type', $graph->resource('sioc:Tag'));
     }
 
   return $graph;
   }
 
-
-  public function do_content_stdClass($graph,$taxonomy){
+  /**
+   * Returns the RDF graph associated with a STDClass typed content type
+   **/
+  public function do_content_stdClass($graph, $taxonomy){
     $taxonomy_resource = $graph->resource(get_term_link( $taxonomy));
     $graph = $this->stdClass_types($graph,$taxonomy);
     $taxonomy_resource->set('rdfs:label', $taxonomy->name ?: null);
@@ -130,8 +161,10 @@ class LH_rdf_object_handlers {
     return $graph;
   }
 
-
-  public function do_content_WP_User($graph,$user){
+  /**
+   * Returns the RDF graph associated with the Wordpress User content type
+   **/
+  public function do_content_WP_User($graph, $user){
     $authoruri = $this->return_user_uri($user->ID);
     $document = $graph->resource(get_author_posts_url($user->ID), 'foaf:PersonalProfileDocument');
     $document->set('dc:title', $user->display_name." FOAF Profile" ?: null);
@@ -151,8 +184,10 @@ class LH_rdf_object_handlers {
     return $graph;
   }
 
-
-  public function do_content_WP_Post($graph,$post){
+  /**
+   * Returns the RDF graph associated with the Wordpress Post content type
+   **/
+  public function do_content_WP_Post($graph, $post){
     $post_resource = $graph->resource($post->guid, 'sioc:Post');
     $graph = apply_filters("lh_rdf_nodes", $graph, $post->guid,$post);
 
@@ -184,8 +219,10 @@ class LH_rdf_object_handlers {
     return $graph;
   }
 
-
-  public function do_content_attachment($graph,$post){
+  /**
+   * Returns the RDF graph associated with the Wordpress Attachment content type
+   **/
+  public function do_content_attachment($graph, $post){
     $post_resource = $graph->resource($post->guid);
     $post_resource->set('foaf:name', $post->post_title);
     $post_resource->set('dcterms:format',$graph->resource('http://purl.org/NET/mediatypes/'.get_post_mime_type($post->ID)));
@@ -209,9 +246,11 @@ class LH_rdf_object_handlers {
   }
 
 
-
-  public function do_content_wp_query($graph,$wp_query){
-    $blogResource = $graph->resource(site_url(), 'sioct:Weblog');
+  /**
+   * Returns the RDF graph associated with the current specific Wordpress query
+   **/
+  public function do_content_wp_query($graph, $wp_query){
+    $blogResource = $graph->resource(site_url(), 'sioc:Weblog');
     $blogResource->add('rdf:type',$graph->resource('http://rdfs.org/sioc/ns#Site'));
     $blogResource->add('rdf:type', $graph->resource('http://purl.org/spar/fabio/WebSite'));
     $blogResource->add('rdf:type', $graph->resource('http://purl.org/info:eu-repo/semantics/EnhancedPublication'));
@@ -248,16 +287,16 @@ class LH_rdf_object_handlers {
   }
 
 
-  public function do_content_datadump($graph){
-    echo "foobar";
-    //$resource = $graph->resource(site_url(), 'void:Dataset');
-    //$allposts = query_posts();
-    //foreach( $allposts as $apost){
-    //$resource->add('void:dataDumpt',$graph->resource(get_permalink($apost->ID)));
-    //}
+  /**
+   * Unclear what the purpose of this method is
+   **/
+  public function do_content_datadump($graph) {
     return $graph;
   }
 
+  /**
+   * Default constructor, taking the format to use as argument
+   **/
   function __construct($format = "rdfxml") {
     $this->format = $format;
   }
