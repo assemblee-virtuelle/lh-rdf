@@ -164,40 +164,72 @@ class LH_rdf_plugin {
     // Get the current format the client is asking for
     $format = $this->map_mime_request();
 
+    // Setting namespace value
     foreach ($this->return_namespaces() as $key => $value){
       EasyRdf_Namespace::set($key, $value);
     }
 
+    // Initializing the Rdf_graph
     $graph = new EasyRdf_Graph();
+
+    // Initializing objects handlers
     $lh_rdf_object_handlers = new LH_rdf_object_handlers($format);
 
-    if ($theobject = get_queried_object()){
-      $thetype = get_class($theobject);
-      $action = "do_content_".$thetype;
-      $graph = $lh_rdf_object_handlers->$action($graph,$theobject);
+    // If we do get the object queried for (valid for Post/Page/Feed)
+    if ($queried_object = get_queried_object()){
+      // Get the current queried object class
+      $queried_object_type = get_class($queried_object);
+
+      // Compute the queried object type associated action
+      $action = "do_content_".$queried_object_type;
+
+      // Call the related action as a method of the handler and get the initialized RDF Graph
+      $graph = $lh_rdf_object_handlers->$action($graph, $queried_object);
+
+    // If the queried object is an attachment
     } elseif ( is_attachment() ) {
       global $wp_query;
 
+      // Querying the attachment related data
       if ($wp_query->query[attachment_id]){
-        $args=array( 'post__in' => array($wp_query->query[attachment_id]) , 'post_type' => 'attachment' );
+        $args = array(
+          'post__in' => array(
+            $wp_query->query[attachment_id]
+          ) ,
+          'post_type' => 'attachment'
+        );
       } else {
-        $args=array(
+        $args = array(
         	'name'           => $wp_query->query[attachment],
         	'post_type'      => 'attachment',
         	'posts_per_page' => 1
         );
       }
+
+      // Get related post based on data initialized above
       $attachment_post = get_posts($args);
+
+      // Initialize and get the associated RDF graph
       $graph = $lh_rdf_object_handlers->do_content_attachment($graph,$attachment_post[0]);
+
+    // If the content is something else
     } else {
       global $wp_query;
+
+      // Call generic content related method to initialize the RDF graph
       $graph = $lh_rdf_object_handlers->do_content_wp_query($graph,$wp_query);
     }
 
-    $graph = apply_filters( "lh_rdf_graph", $graph);
+    // Serialiazing the graph we get using the EasyRdf_Graph library
     $serialize = $graph->serialise($format);
+
+    // Generating proper etag
     $etag = md5($serialize);
+
+    // Adding the Etag information to the response headers
     header("Etag: ".$etag);
+
+    // Display the whole graph
     echo $serialize;
   }
 
@@ -226,6 +258,9 @@ class LH_rdf_plugin {
     return $return;
   }
 
+  /**
+   * Handle template redirection to the requested format
+   **/
   function get_control() {
     if (!is_feed()){
       if ( $format = $this->check_if_rdf_request() ) {
@@ -238,11 +273,17 @@ class LH_rdf_plugin {
     }
   }
 
+  /**
+   * Adding the datadump command to the current query variables
+   **/
   public static function query_var($vars) {
     $vars[] = '__datadump';
     return $vars;
   }
 
+  /**
+   * Parsing current query to display the associated graph.
+   **/
   public static function parse_query($wp) {
     if (!array_key_exists('__datadump', $wp->query_vars)) {
       return;
@@ -252,17 +293,21 @@ class LH_rdf_plugin {
     foreach ($this->standard_namespaces as $key => $value){
       EasyRdf_Namespace::set($key, $value);
     }
-    EasyRdf_Namespace::delete("rss");
     $graph = new EasyRdf_Graph();
     //$lh_rdf_object_handlers = new LH_rdf_object_handlers($format);
     die;
   }
 
+  /**
+   * Initialization command, adding the rdf feed into the available feeds list
+   **/
   public function init() {
     add_feed('lhrdf', array($this, 'do_feed_rdf'));
   }
 
-
+  /**
+   * The class default constructor, adding all action hooks
+   **/
   public function __construct() {
     add_action('init', array($this, 'init'));
     add_action('template_redirect', array($this, 'get_control'));
@@ -272,5 +317,7 @@ class LH_rdf_plugin {
   }
 }
 
+// Plugin class instanciation
 $lh_rdf = new LH_rdf_plugin();
+
 ?>
