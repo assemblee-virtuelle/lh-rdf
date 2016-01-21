@@ -193,11 +193,12 @@ class LH_RDF_relationships_class {
         <?php
       }
     }
-    echo "<h3>" . _e('Namespace Mappings', 'lh-relationships-menu' ) . "</h3>\n<ol>\n";
+    echo "<h3>" . __('Namespace Mappings', 'lh-relationships-menu' ) . "</h3>";
+    echo "<div><ol>";
     foreach($this->options['namespaces'] as $key => $value ){
       echo "<li>".$key.": ".$value." <a href=\"".add_query_arg( 'lh_relationships-action', 'remove_option', add_query_arg( 'lh_relationships-option', 'namespaces', add_query_arg( 'lh_relationships-key', $key)))."\">remove</a></li>\n";
     }
-    echo "</ol>\n";
+    echo "</ol></div>";
     ?>
     <form name="lh_relationships-backend_form" method="post" action="<?php echo esc_url( remove_query_arg( array('lh_relationships-action','lh_relationships-option','lh_relationships-key')) ); ?>">
       <input type="hidden" name="<?php echo $this->hidden_field_name; ?>" value="Y" />
@@ -211,11 +212,12 @@ class LH_RDF_relationships_class {
       </p>
       <?php
 
-      echo "<h3>" . _e('Post Relationship Mappings', 'lh-relationships-menu' ) . "</h3>\n<ol>\n";
+      echo "<h3>" . __('Post Relationship Mappings', 'lh-relationships-menu' ) . "</h3>";
+      echo "<div><ol>";
       foreach($this->options['type_mapping'] as $key => $value ){
         echo "<li>".$key."--> ".$value." <a href=\"".add_query_arg( 'lh_relationships-action', 'remove_option', add_query_arg( 'lh_relationships-option', 'type_mapping', add_query_arg( 'lh_relationships-key', $key)))."\">" . _e('Remove', 'lh-relationships-menu' ) . "</a></li>\n";
       }
-      echo "</ol>\n";
+      echo "</ol></div>";
 
       ?>
       <strong><?php _e("Add Post Relationship Mappings", 'lh-relationships-menu' ); ?></strong>
@@ -230,11 +232,12 @@ class LH_RDF_relationships_class {
         _e("URI:", 'lh-relationships-menu' ); ?><input type="url" name="<?php echo $this->opt_name."-add_type_uri"; ?>" id="<?php echo $this->opt_name."-add_type_uri"; ?>" size="40" />
       </p>
       <?php
-      echo "<h3>" . _e('Post Meta Mappings', 'lh-relationships-menu' ) . "</h3>\n<ol>\n";
+      echo "<h3>" . __('Post Meta Mappings', 'lh-relationships-menu' ) . "</h3>";
+      echo "<div><ol>";
       foreach($this->options['postmeta_mapping'] as $key => $value ){
         echo "<li>".$key."--> ".$value." <a href=\"".add_query_arg( 'lh_relationships-action', 'remove_option', add_query_arg( 'lh_relationships-option', 'postmeta_mapping', add_query_arg( 'lh_relationships-key', $key)))."\">" . _e('Remove', 'lh-relationships-menu' ) . "</a></li>\n";
       }
-      echo "</ol>\n";
+      echo "</ol></div>";
       ?>
       <strong><?php _e("Add Post Meta Mappings", 'lh-relationships-menu' ); ?></strong>
       <p>
@@ -243,11 +246,12 @@ class LH_RDF_relationships_class {
       </p>
 
       <?php
-      echo "<h3>" . _e('User Meta Mappings', 'lh-relationships-menu' ) . "</h3>\n<ol>\n";
+      echo "<h3>" . __('User Meta Mappings', 'lh-relationships-menu' ) . "</h3>";
+      echo "<div><ol>";
       foreach($this->options['usermeta_mapping'] as $key => $value ){
         echo "<li>".$key."--> ".$value." <a href=\"".add_query_arg( 'lh_relationships-action', 'remove_option', add_query_arg( 'lh_relationships-option', 'usermeta_mapping', add_query_arg( 'lh_relationships-key', $key)))."\">" . _e('Remove', 'lh-relationships-menu' ) . "</a></li>\n";
       }
-      echo "</ol>\n";
+      echo "</ol></div>";
       ?>
       <strong><?php _e("Add User Meta Mappings", 'lh-relationships-menu' ); ?></strong>
       <p>
