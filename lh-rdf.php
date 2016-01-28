@@ -52,17 +52,12 @@ class LH_rdf_plugin {
    * Map the document format asked and the associated content type header
    **/
   var $format_mapper = array (
-    "jsonld" => "application/ld+json",
-    "json" => "application/json",
+    "json" => "application/ld+json",
     "n3" => "text/n3",
     "ntriples" => "application/n-triples",
     "php" => "application/x-httpd-php-source",
     "rdfxml"  => "application/rdf+xml",
-    "turtle" => "text/turtle",
-    //"dot" => "text/vnd.graphviz",
-    //"gif" => "image/gif",
-    //"png" => "image/png",
-    //"svg" => "image/svg+xml"
+    "turtle" => "text/turtle"
   );
 
   var $standard_namespaces;
@@ -142,25 +137,6 @@ class LH_rdf_plugin {
   }
 
   /**
-   * Compute the RDF Feed URL for the current page
-   **/
-  function get_rdf_link() {
-    global $post;
-    if ( is_singular() ){
-      $base_mid = get_permalink()."?feed=lhrdf";
-    } elseif (is_author()){
-      $base_mid = get_author_posts_url($post->post_author);
-      $base_mid .= "?feed=lhrdf";
-    } else {
-      $base_mid = "http://$_SERVER[HTTP_HOST]";
-      $base_mid .= "/";
-      $base_mid .= "?feed=lhrdf";
-    }
-    return $base_mid;
-  }
-
-
-  /**
    * THE FUNCTION: Generates the Feed in the proper format based on the request
    **/
   public function do_feed_rdf() {
@@ -223,17 +199,17 @@ class LH_rdf_plugin {
       $graph = $lh_rdf_object_handlers->do_content_wp_query($graph,$wp_query);
     }
 
-    // Serialiazing the graph we get using the EasyRdf_Graph library
-    $serialize = $graph->serialise($format);
+    // Serialiazing the graph we get in the proper format using the EasyRdf_Graph library
+    $serialized_graph = $graph->serialise($format);
 
     // Generating proper etag
-    $etag = md5($serialize);
+    $etag = md5($serialized_graph);
 
     // Adding the Etag information to the response headers
     header("Etag: ".$etag);
 
     // Display the whole graph
-    echo $serialize;
+    echo $serialized_graph;
   }
 
   /**
@@ -242,7 +218,7 @@ class LH_rdf_plugin {
   function add_link_to_head() {
     echo "\n\n<!-- Start LH RDF -->\n";
     foreach ($this->format_mapper as $key => $value){
-      echo "<link rel=\"meta\" type=\"".$value."\" title=\"SIOC\"  href=\"".$this->get_link($key)."\" />\n";
+      echo "<link rel=\"meta\" type=\"".$value."\" title=\"$key format link\"  href=\"".$this->get_link($key)."\" />\n";
     }
     echo "<!-- End LH RDF -->\n\n";
   }
