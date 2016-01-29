@@ -15,15 +15,17 @@ class LH_RDF_relationships_class {
    **/
   function list_types($type){
     $uniques = [];
-    foreach ( P2P_Connection_Type_Factory::get_all_instances() as $p2p_type => $ctype ) {
-      if (get_class($ctype->side['from']) == "P2P_Side_".ucfirst($type)){
-        $uniques[] = $p2p_type;
+    if (class_exists('P2P_Connection_Type_Factory')) {
+      foreach ( P2P_Connection_Type_Factory::get_all_instances() as $p2p_type => $ctype ) {
+        if (get_class($ctype->side['from']) == "P2P_Side_".ucfirst($type)){
+          $uniques[] = $p2p_type;
+        }
       }
     }
 
     $array = [];
     foreach ($uniques as $unique){
-      if ($this->options['type_mapping'][$unique]){
+      if (isset($this->options['type_mapping'])  && $this->options['type_mapping'][$unique]){
         $array[] = $unique;
       }
     }
@@ -51,10 +53,12 @@ class LH_RDF_relationships_class {
 
     // Add them to the graph as related content (rdfs:seeAlso)
     foreach ( $connectedposts->posts as $connectedpost ) {
-      $graph->resource($subject)->set(
-        $this->options['type_mapping'][$connectedpost->p2p_type],
-        $graph->resource(str_replace("&#038;", "&", $connectedpost->guid))
-      );
+      if (isset($this->options['type_mapping'])) {
+        $graph->resource($subject)->set(
+          $this->options['type_mapping'][$connectedpost->p2p_type],
+          $graph->resource(str_replace("&#038;", "&", $connectedpost->guid))
+        );
+      }
 
       $graph->resource(str_replace("&#038;", "&", $connectedpost->guid))->set(
         "rdfs:seeAlso",
@@ -72,10 +76,12 @@ class LH_RDF_relationships_class {
 
     // Add them to the graph as related content (rdfs:seeAlso) -> we could use FOAF:knows ?
     foreach ( $connectedusers->results as $user) {
-      $graph->resource($subject)->set(
-        $this->options['type_mapping'][$user->p2p_type],
-        $graph->resource(get_author_posts_url($user->ID))
-      );
+      if (isset($this->options['type_mapping'])) {
+        $graph->resource($subject)->set(
+          $this->options['type_mapping'][$user->p2p_type],
+          $graph->resource(get_author_posts_url($user->ID))
+        );
+      }
 
       $graph->resource(get_author_posts_url($user->ID))->set(
         "rdfs:seeAlso",
@@ -85,27 +91,31 @@ class LH_RDF_relationships_class {
 
     // The lh_relationships_usermeta and lh_relationships_postmeta are surprisingly not defined. WTF ?
     if ($theobject->caps){
-      foreach($this->options['usermeta_mapping'] as $key => $value ){
-        $user_metas = get_user_meta( $theobject->ID, $key);
-        if (!empty($user_metas)){
-          foreach($user_metas as $user_meta ){
-            if (!is_array($user_meta)){
-              $graph->resource($subject)->add($value,$user_meta);
+      if (isset($this->options['postmeta_mapping'])) {
+        foreach($this->options['usermeta_mapping'] as $key => $value ){
+          $user_metas = get_user_meta( $theobject->ID, $key);
+          if (!empty($user_metas)){
+            foreach($user_metas as $user_meta ){
+              if (!is_array($user_meta)){
+                $graph->resource($subject)->add($value,$user_meta);
+              }
             }
+            $graph = apply_filters( "lh_relationships_usermeta", $graph,$subject, $user_metas,$key,$value);
           }
-          $graph = apply_filters( "lh_relationships_usermeta", $graph,$subject, $user_metas,$key,$value);
         }
       }
     } else {
-      foreach($this->options['postmeta_mapping'] as $key => $value ){
-        $post_metas = get_post_meta( $theobject->ID, $key);
-        if (!empty($post_metas)){
-          foreach($post_metas as $post_meta ){
-            if (!is_array($post_meta)){
-              $graph->resource($subject)->add($value,$post_meta);
+      if (isset($this->options['postmeta_mapping'])) {
+        foreach($this->options['postmeta_mapping'] as $key => $value ){
+          $post_metas = get_post_meta( $theobject->ID, $key);
+          if (!empty($post_metas)){
+            foreach($post_metas as $post_meta ){
+              if (!is_array($post_meta)){
+                $graph->resource($subject)->add($value,$post_meta);
+              }
             }
+            $graph = apply_filters( "lh_relationships_postmeta", $graph,$subject, $post_metas,$key,$value);
           }
-          $graph = apply_filters( "lh_relationships_postmeta", $graph,$subject, $post_metas,$key,$value);
         }
       }
     }
